@@ -1,23 +1,10 @@
+use etherparse::Ethernet2Slice;
+use mac_parser::MACAddress;
 use std::process::Command;
 use tun_tap::Iface;
 
-//TODO
-struct Ipv4Packege {
-    version: u8,
-    ihl: u8,
-    tos: u8,
-    total_lenght: u16,
-}
-
-// TODO
-impl Ipv4Packege {
-    pub fn new() -> Self {
-        unimplemented!();
-    }
-}
-
 fn main() -> Result<(), std::io::Error> {
-    let interface = Iface::new("Iface0", tun_tap::Mode::Tun)?;
+    let interface = Iface::new("Iface0", tun_tap::Mode::Tap)?;
 
     //setting ip for interface Iface0
 
@@ -50,22 +37,18 @@ fn main() -> Result<(), std::io::Error> {
         .wait();
 
     // when interface calls recv copies the packege into this buffer.
-    let mut buffer: [u8; 1504] = [0u8; 1504]; //this is Maximun Transmission Unit(MTU)
+    let mut buffer: [u8; 1526] = [0u8; 1526]; //this is Maximun Transmission Unit(MTU)
 
     loop {
         let p = interface.recv(&mut buffer);
-
-        if p.is_ok() {
-            let flags = u16::from_be_bytes([buffer[0], buffer[1]]);
-            let protocol = u16::from_be_bytes([buffer[2], buffer[3]]);
-
-            let mut data = [0u8; 1500];
-            data.copy_from_slice(&buffer[4..1504]);
-
-            todo!();
-            let Ipv4Packege = Ipv4Packege::new(data);
-
-            println!("flags: {:x}, protocol: {:x}", flags, protocol);
+        if let Ok(len) = p {
+            let packet = Ethernet2Slice::from_slice_without_fcs(&buffer[..len]);
+            let pac = packet.unwrap();
+            let source = MACAddress::new(pac.source());
+            let destination = MACAddress::new(pac.destination());
+            println!("Source MAC: {}, Destination MAC: {}", source, destination);
+        } else {
+            println!("Error");
         }
     }
 }
