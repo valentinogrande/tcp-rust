@@ -1,14 +1,10 @@
 use etherparse::{Ipv4HeaderSlice, TcpHeaderSlice};
 use std::collections::HashMap;
 
+mod conn;
 mod set_iface;
 
-pub struct ConnectionId {
-    pub source_address: [u8; 4],
-    pub soure_port: u16,
-    pub destination_address: [u8; 4],
-    pub destination_port: u16,
-}
+use conn::ConnectionId;
 
 struct State {}
 
@@ -27,30 +23,30 @@ fn main() -> Result<(), std::io::Error> {
 
         let _flags = u16::from_be_bytes(flags);
         let proto = u16::from_be_bytes(proto);
+        let mut _packet_len = 0usize;
 
-        if let Ok(_len) = p {
-            if proto == 0x800 {
-                // 0x800 means IpV4 packet
-                let packet = Ipv4HeaderSlice::from_slice(&buffer[4..]).unwrap();
+        if let Ok(len) = p {
+            _packet_len = len;
+        }
 
-                let proto = packet.protocol().0;
+        // 0x800 means IpV4 packet
+        if proto != 0x800 {
+            continue;
+        }
 
-                let source_address = packet.source();
-                let destination_address = packet.destination();
-                let len = packet.slice().len();
+        let packet = Ipv4HeaderSlice::from_slice(&buffer[4..]).unwrap();
 
-                // 6 is tcp
-                if proto != 6 {
-                } else {
-                    let tcp_packet = TcpHeaderSlice::from_slice(&buffer[4 + len..]).unwrap();
-                    let source_port = tcp_packet.source_port();
-                    let destination_port = tcp_packet.destination_port();
+        // 6 is tcp
+        if packet.protocol().0 == 6 {
+            let tcp_packet =
+                TcpHeaderSlice::from_slice(&buffer[4 + packet.slice().len()..]).unwrap();
 
-                    println!("{source_port} -> {destination_port}");
-                }
-            }
-        } else {
-            println!("Error");
+            let conn = ConnectionId::new(
+                packet.source(),
+                tcp_packet.source_port(),
+                packet.destination(),
+                tcp_packet.destination_port(),
+            );
         }
     }
 }
