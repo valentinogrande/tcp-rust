@@ -22,10 +22,10 @@ fn main() -> Result<(), std::io::Error> {
 
         let _flags = u16::from_be_bytes(flags);
         let proto = u16::from_be_bytes(proto);
-        let mut _packet_len = 0usize;
+        let mut packet_len = 0usize;
 
         if let Ok(len) = p {
-            _packet_len = len;
+            packet_len = len;
         }
 
         // 0x800 means IpV4 packet
@@ -33,12 +33,12 @@ fn main() -> Result<(), std::io::Error> {
             continue;
         }
 
-        let packet = Ipv4HeaderSlice::from_slice(&buffer[4..]).unwrap();
+        let packet = Ipv4HeaderSlice::from_slice(&buffer[4..packet_len]).unwrap();
 
         // 6 is tcp
         if packet.protocol().0 == 6 {
             let tcp_packet =
-                TcpHeaderSlice::from_slice(&buffer[4 + packet.slice().len()..]).unwrap();
+                TcpHeaderSlice::from_slice(&buffer[4 + packet.slice().len()..packet_len]).unwrap();
 
             let conn = ConnectionId::new(
                 packet.source(),
