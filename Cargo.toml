@@ -6,4 +6,3 @@ edition = "2024"
 [dependencies]
 tun-tap = "0.1.4"
 etherparse = "0.20.2"
-mac-parser="0.2.0"

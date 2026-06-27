@@ -1,10 +1,9 @@
-use etherparse::Ethernet2Slice;
-use mac_parser::MACAddress;
+use etherparse::Ipv4HeaderSlice;
 use std::process::Command;
 use tun_tap::Iface;
 
 fn main() -> Result<(), std::io::Error> {
-    let interface = Iface::new("Iface0", tun_tap::Mode::Tap)?;
+    let interface = Iface::new("tun0", tun_tap::Mode::Tun)?;
 
     //setting ip for interface Iface0
 
@@ -14,7 +13,7 @@ fn main() -> Result<(), std::io::Error> {
     let ip = format!("{}/{}", ip_address, mask);
     let name = interface.name();
 
-    let child = Command::new("sudo")
+    let _child = Command::new("sudo")
         .arg("ip")
         .arg("addr")
         .arg("add")
@@ -25,7 +24,7 @@ fn main() -> Result<(), std::io::Error> {
         .expect("Failed to set ip")
         .wait();
 
-    let child = Command::new("sudo")
+    let _child = Command::new("sudo")
         .arg("ip")
         .arg("link")
         .arg("set")
@@ -37,16 +36,26 @@ fn main() -> Result<(), std::io::Error> {
         .wait();
 
     // when interface calls recv copies the packege into this buffer.
-    let mut buffer: [u8; 1526] = [0u8; 1526]; //this is Maximun Transmission Unit(MTU)
+    let mut buffer: [u8; 1504] = [0u8; 1504]; //this is Maximun Transmission Unit(MTU)
 
     loop {
         let p = interface.recv(&mut buffer);
+        let flags = [buffer[0], buffer[1]]; // first 2 bytes
+        let proto = [buffer[2], buffer[3]]; // 3 and 4th bytes
+
+        let flags = u16::from_be_bytes(flags);
+        let proto = u16::from_be_bytes(proto);
+
         if let Ok(len) = p {
-            let packet = Ethernet2Slice::from_slice_without_fcs(&buffer[..len]);
-            let pac = packet.unwrap();
-            let source = MACAddress::new(pac.source());
-            let destination = MACAddress::new(pac.destination());
-            println!("Source MAC: {}, Destination MAC: {}", source, destination);
+            if proto == 0x800 {
+                // 0x800 means IpV4 packet
+                let packet = Ipv4HeaderSlice::from_slice(&buffer[4..]).unwrap();
+
+                let source = packet.source();
+                let destination = packet.destination();
+
+                println!("source: {:#?}, destinantion: {:#?}", source, destination);
+            }
         } else {
             println!("Error");
         }
