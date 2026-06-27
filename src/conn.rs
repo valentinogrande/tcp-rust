@@ -1,4 +1,4 @@
-use std::fmt::{self, format};
+use std::fmt;
 
 pub struct ConnectionId {
     pub source_address: [u8; 4],
@@ -32,7 +32,7 @@ impl fmt::Display for ConnectionId {
         write!(
             f,
             "{s}:{} -> {d}:{}",
-            self.destination_port, self.destination_port
+            self.source_port, self.destination_port
         )
     }
 }
