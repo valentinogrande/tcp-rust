@@ -1,4 +1,4 @@
-use etherparse::Ipv4HeaderSlice;
+use etherparse::{Ipv4HeaderSlice, TcpHeaderSlice};
 use std::process::Command;
 use tun_tap::Iface;
 
@@ -43,18 +43,29 @@ fn main() -> Result<(), std::io::Error> {
         let flags = [buffer[0], buffer[1]]; // first 2 bytes
         let proto = [buffer[2], buffer[3]]; // 3 and 4th bytes
 
-        let flags = u16::from_be_bytes(flags);
+        let _flags = u16::from_be_bytes(flags);
         let proto = u16::from_be_bytes(proto);
 
-        if let Ok(len) = p {
+        if let Ok(_len) = p {
             if proto == 0x800 {
                 // 0x800 means IpV4 packet
                 let packet = Ipv4HeaderSlice::from_slice(&buffer[4..]).unwrap();
 
-                let source = packet.source();
-                let destination = packet.destination();
+                let proto = packet.protocol().0;
 
-                println!("source: {:#?}, destinantion: {:#?}", source, destination);
+                let source_address = packet.source();
+                let destination_address = packet.destination();
+                let len = packet.slice().len();
+
+                // 6 is tcp
+                if proto != 6 {
+                } else {
+                    let tcp_packet = TcpHeaderSlice::from_slice(&buffer[4 + len..]).unwrap();
+                    let source_port = tcp_packet.source_port();
+                    let destination_port = tcp_packet.destination_port();
+
+                    println!("{source_port} -> {destination_port}");
+                }
             }
         } else {
             println!("Error");
