@@ -8,9 +8,7 @@ pub fn set_interface() -> Result<Iface, std::io::Error> {
 
     let ip_address = "10.0.0.1"; // private ip
     let mask = "24";
-
     let ip = format!("{}/{}", ip_address, mask);
-    let name = interface.name();
 
     let _child = Command::new("sudo")
         .arg("ip")
@@ -18,7 +16,7 @@ pub fn set_interface() -> Result<Iface, std::io::Error> {
         .arg("add")
         .arg(ip)
         .arg("dev")
-        .arg(name)
+        .arg(interface.name())
         .spawn()
         .expect("Failed to set ip")
         .wait();
@@ -28,7 +26,7 @@ pub fn set_interface() -> Result<Iface, std::io::Error> {
         .arg("link")
         .arg("set")
         .arg("dev")
-        .arg(name)
+        .arg(interface.name())
         .arg("up")
         .spawn()
         .expect("Error setting interface up")

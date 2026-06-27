@@ -1,10 +1,9 @@
+use conn::ConnectionId;
 use etherparse::{Ipv4HeaderSlice, TcpHeaderSlice};
 use std::collections::HashMap;
 
 mod conn;
 mod set_iface;
-
-use conn::ConnectionId;
 
 struct State {}
 
@@ -47,6 +46,8 @@ fn main() -> Result<(), std::io::Error> {
                 packet.destination(),
                 tcp_packet.destination_port(),
             );
+
+            println!("{conn}");
         }
     }
 }
