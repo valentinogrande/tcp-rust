@@ -1,39 +1,21 @@
 use etherparse::{Ipv4HeaderSlice, TcpHeaderSlice};
-use std::process::Command;
-use tun_tap::Iface;
+use std::collections::HashMap;
+
+mod set_iface;
+
+pub struct ConnectionId {
+    pub source_address: [u8; 4],
+    pub soure_port: u16,
+    pub destination_address: [u8; 4],
+    pub destination_port: u16,
+}
+
+struct State {}
 
 fn main() -> Result<(), std::io::Error> {
-    let interface = Iface::new("tun0", tun_tap::Mode::Tun)?;
+    let interface = set_iface::set_interface()?;
 
-    //setting ip for interface Iface0
-
-    let ip_address = "10.0.0.1"; // private ip
-    let mask = "24";
-
-    let ip = format!("{}/{}", ip_address, mask);
-    let name = interface.name();
-
-    let _child = Command::new("sudo")
-        .arg("ip")
-        .arg("addr")
-        .arg("add")
-        .arg(ip)
-        .arg("dev")
-        .arg(name)
-        .spawn()
-        .expect("Failed to set ip")
-        .wait();
-
-    let _child = Command::new("sudo")
-        .arg("ip")
-        .arg("link")
-        .arg("set")
-        .arg("dev")
-        .arg(name)
-        .arg("up")
-        .spawn()
-        .expect("Error setting interface up")
-        .wait();
+    let mut conns: HashMap<ConnectionId, State> = HashMap::new();
 
     // when interface calls recv copies the packege into this buffer.
     let mut buffer: [u8; 1504] = [0u8; 1504]; //this is Maximun Transmission Unit(MTU)
