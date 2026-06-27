@@ -7,6 +7,12 @@ pub struct ConnectionId {
     pub destination_port: u16,
 }
 
+pub enum ConnState {
+    Syn,
+    SynAck,
+    Ack,
+}
+
 impl ConnectionId {
     pub fn new(
         source_address: [u8; 4],

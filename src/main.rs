@@ -1,21 +1,31 @@
-use conn::ConnectionId;
-use etherparse::{Ipv4HeaderSlice, TcpHeaderSlice};
+use conn::{ConnState, ConnectionId};
+use etherparse::{Ipv4HeaderSlice, TcpHeader, TcpHeaderSlice};
 use std::collections::HashMap;
 
 mod conn;
 mod set_iface;
 
-struct State {}
+enum TcpState {
+    Listen,
+    Closed,
+}
 
 fn main() -> Result<(), std::io::Error> {
     let interface = set_iface::set_interface()?;
 
-    let mut conns: HashMap<ConnectionId, State> = HashMap::new();
+    let mut conns: HashMap<ConnectionId, ConnState> = HashMap::new();
+
+    let state = TcpState::Listen;
+    let mut ports: Vec<u16> = Vec::from([80, 443]);
 
     // when interface calls recv copies the packege into this buffer.
     let mut buffer: [u8; 1504] = [0u8; 1504]; //this is Maximun Transmission Unit(MTU)
 
     loop {
+        if let TcpState::Closed = state {
+            continue;
+        }
+
         let p = interface.recv(&mut buffer);
         let flags = [buffer[0], buffer[1]]; // first 2 bytes
         let proto = [buffer[2], buffer[3]]; // 3 and 4th bytes
@@ -46,6 +56,17 @@ fn main() -> Result<(), std::io::Error> {
                 packet.destination(),
                 tcp_packet.destination_port(),
             );
+
+            if !ports.contains(&conn.destination_port) {
+                continue;
+            }
+
+            if tcp_packet.syn() {
+                let mut syn_ack = TcpHeader::new(conn.destination_port, conn.source_port, 0, 0);
+
+                syn_ack.syn = true; // we also want to comunicate with this conn
+                syn_ack.ack = true; // we accept him to talk us
+            }
 
             println!("{conn}");
         }
