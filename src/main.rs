@@ -1,5 +1,5 @@
 use conn::{ConnState, ConnectionId};
-use etherparse::{Ipv4HeaderSlice, TcpHeader, TcpHeaderSlice};
+use etherparse::{Ipv4Header, Ipv4HeaderSlice, TcpHeader, TcpHeaderSlice};
 use std::collections::HashMap;
 
 mod conn;
@@ -20,6 +20,8 @@ fn main() -> Result<(), std::io::Error> {
 
     // when interface calls recv copies the packege into this buffer.
     let mut buffer: [u8; 1504] = [0u8; 1504]; //this is Maximun Transmission Unit(MTU)
+
+    let payload = [0u8; 10];
 
     loop {
         if let TcpState::Closed = state {
@@ -66,6 +68,30 @@ fn main() -> Result<(), std::io::Error> {
 
                 syn_ack.syn = true; // we also want to comunicate with this conn
                 syn_ack.ack = true; // we accept him to talk us
+
+                let ipv4 = Ipv4Header::new(
+                    syn_ack.header_len_u16(),
+                    64,
+                    etherparse::IpNumber::TCP,
+                    conn.destination_address,
+                    conn.source_address,
+                );
+
+                if let Err(e) = ipv4 {
+                    println!("{}", e);
+                    panic!()
+                }
+
+                let ipv4 = ipv4.unwrap();
+
+                let s = {
+                    let mut s = &mut buffer[..];
+                    ipv4.write(&mut s)?;
+                    syn_ack.write(&mut s)?;
+                    s.len()
+                };
+
+                interface.send(&buffer[..s])?;
             }
 
             println!("{conn}");
