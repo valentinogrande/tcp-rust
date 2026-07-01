@@ -84,17 +84,24 @@ fn main() -> Result<(), std::io::Error> {
 
                 let ipv4 = ipv4.unwrap();
 
+                conns.insert(conn, ConnState::SynAck);
+
                 let s = {
                     let mut s = &mut buffer[..];
+
                     ipv4.write(&mut s)?;
                     syn_ack.write(&mut s)?;
                     s.len()
                 };
 
                 interface.send(&buffer[..s])?;
+            } else if tcp_packet.ack() {
+                if !conns.contains_key(&conn) {
+                    continue;
+                }
+            } else {
+                continue;
             }
-
-            println!("{conn}");
         }
     }
 }

@@ -1,5 +1,6 @@
 use std::fmt;
 
+#[derive(Hash, Eq, PartialEq, PartialOrd, Ord)]
 pub struct ConnectionId {
     pub source_address: [u8; 4],
     pub source_port: u16,
