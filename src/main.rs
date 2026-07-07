@@ -1,10 +1,11 @@
-use conn::{ConnState, ConnectionId};
+use conn::{Conn, ConnectionId};
 use etherparse::{Ipv4Header, Ipv4HeaderSlice, TcpHeader, TcpHeaderSlice};
 use std::collections::HashMap;
 
 mod conn;
 mod set_iface;
 
+#[allow(dead_code)]
 enum TcpState {
     Listen,
     Closed,
@@ -13,14 +14,17 @@ enum TcpState {
 fn main() -> Result<(), std::io::Error> {
     let interface = set_iface::set_interface()?;
 
-    let mut conns: HashMap<ConnectionId, ConnState> = HashMap::new();
+    let mut conns: HashMap<ConnectionId, Conn> = HashMap::new();
 
     let state = TcpState::Listen;
+
+    #[allow(unused_mut)]
     let mut ports: Vec<u16> = Vec::from([80, 443]);
 
     // when interface calls recv copies the packege into this buffer.
     let mut buffer: [u8; 1504] = [0u8; 1504]; //this is Maximun Transmission Unit(MTU)
 
+    #[allow(unused)]
     let payload = [0u8; 10];
 
     loop {
@@ -84,7 +88,8 @@ fn main() -> Result<(), std::io::Error> {
 
                 let ipv4 = ipv4.unwrap();
 
-                conns.insert(conn, ConnState::SynAck);
+                let connection = Conn::new();
+                conns.insert(conn, connection);
 
                 let s = {
                     let mut s = &mut buffer[..];

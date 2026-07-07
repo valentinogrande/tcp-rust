@@ -8,10 +8,60 @@ pub struct ConnectionId {
     pub destination_port: u16,
 }
 
+#[allow(unused)]
+pub struct SendSequence {
+    pub una: usize,
+    pub nxt: usize,
+    pub wnd: usize,
+    pub up: bool,
+    pub wl1: usize,
+    pub wl2: usize,
+    pub iss: usize,
+}
+
+#[allow(unused)]
+pub struct ReceiveSequence {
+    pub nxt: usize,
+    pub wnd: usize,
+    pub up: bool,
+    pub irs: usize,
+}
+
+#[allow(unused)]
+pub struct Conn {
+    pub state: ConnState,
+    pub send: SendSequence,
+    pub receive: ReceiveSequence,
+}
+
+impl Conn {
+    pub fn new() -> Self {
+        Self {
+            state: ConnState::Syn,
+            send: SendSequence {
+                una: (0),
+                nxt: (1),
+                wnd: (10),
+                up: (false),
+                wl1: (10),
+                wl2: (10),
+                iss: (0),
+            },
+            receive: ReceiveSequence {
+                nxt: (0),
+                wnd: (10),
+                up: (false),
+                irs: (0),
+            },
+        }
+    }
+}
+
+#[allow(unused)]
 pub enum ConnState {
     Syn,
     SynAck,
-    Ack,
+    Established,
 }
 
 impl ConnectionId {
