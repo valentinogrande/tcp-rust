@@ -51,7 +51,7 @@ fn main() -> Result<(), std::io::Error> {
 
         let packet = Ipv4HeaderSlice::from_slice(&buffer[4..packet_len]).unwrap();
 
-        // 6 is tcp
+        // protocol 6 is tcp
         if packet.protocol().0 == 6 {
             let tcp_packet =
                 TcpHeaderSlice::from_slice(&buffer[4 + packet.slice().len()..packet_len]).unwrap();

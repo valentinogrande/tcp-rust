@@ -8,16 +8,47 @@ pub struct ConnectionId {
     pub destination_port: u16,
 }
 
+/*
+
+   1         2          3          4
+----------|----------|----------|----------
+     SND.UNA    SND.NXT    SND.UNA
+                          +SND.WND
+
+1 - anteriores números de secuencia de los que ya se ha
+    recibido acuse de recibo
+2 - número de secuencia de datos sin acuse de recibo
+    recibido
+3 - número de secuencia permitido en la siguiente
+    transmisión de datos
+4 - futuros números de secuencia no permitidos todavía en
+    la siguiente transmisión
+*/
+
 #[allow(unused)]
 pub struct SendSequence {
-    pub una: usize,
-    pub nxt: usize,
-    pub wnd: usize,
+    pub una: usize, // what we have sent but it have not been acknowledged
+    pub nxt: usize, // what we are going to send, the next time we sent something
+    pub wnd: usize, // how much we are allowed to send. (As a reciever, we can limit how much the sender maximun byte len)
     pub up: bool,
     pub wl1: usize,
     pub wl2: usize,
-    pub iss: usize,
+    pub iss: usize, // initial sequence number. It dont need to be 0.
 }
+
+/*
+   1          2          3
+----------|----------|----------
+      RCV.NXT    RCV.NXT
+                +RCV.WND
+
+1 - anteriores números de secuencia de los que ya se han
+    envíado el acuse de recibo
+2 - números de secuencia permitidos para una nueva
+    recepción
+3 - futuros números de secuencia que todavía no están
+        permitidos
+*/
 
 #[allow(unused)]
 pub struct ReceiveSequence {
